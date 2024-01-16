@@ -10,8 +10,8 @@ class Courier(Base):
 
     id = Column(UUID, primary_key=True)
     name = Column(String)
-    avg_order_complete_time = Column(DateTime)
-    avg_day_orders = Column(Float)
+    avg_order_complete_time = Column(Integer)
+    avg_day_orders = Column(Integer)
 
     orders = relationship("Order", back_populates="courier")
     courier_districts = relationship("District", back_populates="district_couriers", secondary="couriers_districts")
@@ -21,7 +21,7 @@ class District(Base):
     __tablename__ = "districts"
 
     id = Column(UUID, primary_key=True)
-    name = Column(String)
+    name = Column(String, unique=True)
 
     orders = relationship("Order", back_populates="district")
     district_couriers = relationship("Courier", back_populates="courier_districts", secondary="couriers_districts")
