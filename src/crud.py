@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 from sqlalchemy.orm import Session
 
@@ -42,3 +43,7 @@ def create_courier(db: Session, courier: schemas.CourierBase):
     db.commit()
     db.refresh(db_courier)
     return db_courier
+
+
+def get_couriers(db: Session):
+    return db.query(models.Courier).all()

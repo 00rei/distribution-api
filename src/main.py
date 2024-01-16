@@ -24,3 +24,8 @@ def create_courier(courier: schemas.CourierBase, db: Session = Depends(get_db)):
     db_courier.districts = districts
     db_courier = crud.create_courier(db, db_courier)
     return {"message": f"Курьер '{db_courier.name}' зарегистрирован в системе"}
+
+
+@app.get("/courier", response_model=list[schemas.CourierOut])
+def get_couriers(db: Session = Depends(get_db)):
+    return crud.get_couriers(db)

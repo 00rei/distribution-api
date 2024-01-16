@@ -17,6 +17,11 @@ class CourierBase(BaseModel):
     districts: list[str] = set()
 
 
+class CourierOut(BaseModel):
+    id: UUID4
+    name: str
+
+
 class Courier(CourierBase):
     id: UUID4
     avg_order_complete_time: timedelta | None
@@ -39,5 +44,3 @@ class Order(OrderBase):
     courier: Courier
     date_publication: datetime
     date_completion: datetime | None
-
-
