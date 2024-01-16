@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
-from .database import SessionLocal, engine
+from .database import SessionLocal
 
 app = FastAPI()
 
@@ -39,6 +39,7 @@ def get_courier(id: str, db: Session = Depends(get_db)):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Courier does not exist')
 
 
-# @app.post("/order")
-# def create_order(order: schemas.OrderIn, db: Session = Depends(get_db)):
-#     return crud.create_order(db, order)
+@app.post("/order", response_model=schemas.OrderCreated)
+def create_order(order: schemas.OrderIn, db: Session = Depends(get_db)):
+    order = crud.create_order(db, order)
+    return order

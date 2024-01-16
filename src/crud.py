@@ -1,9 +1,6 @@
 import uuid
 from enum import IntEnum
-from typing import List
-
 from fastapi import HTTPException, status
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 from . import models, schemas
 
@@ -18,7 +15,6 @@ def get_district(db: Session, district_param: str) -> schemas.District | None:
     if district is None:
         return None
 
-    district.name = district.name.title()
     return district
 
 
@@ -53,7 +49,6 @@ def create_courier(db: Session, courier: schemas.CourierIn):
 
 
 def get_active_order_by_courier(db: Session, courier: schemas.Courier):
-    print(courier.id)
     db_order = db.query(models.Order).filter(models.Order.status == Status.IN_PROGRESS,
                                              models.Order.courier_id == courier.id).first()
     return db_order
@@ -83,6 +78,30 @@ def get_courier(id: str, db: Session):
     return courier
 
 
-# def create_order(db: Session, order: schemas.OrderIn):
-#     district = get_district(db, order.district)
-#     courier = db.query(models.Courier).filter(models.Courier.courier_districts)
+def create_order(db: Session, order: schemas.OrderIn) -> schemas.OrderCreated:
+    district = get_district(db, order.district)
+    try:
+        couriers = district.district_couriers
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='No suitable courier found')
+    list_couriers: list[models.Courier] = []
+
+    for courier in couriers:
+        if get_active_order_by_courier(db, courier) is None:
+            list_couriers.append(courier)
+
+    if not list_couriers:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='No suitable courier found')
+
+    # courier = min(list_couriers, key=lambda x: x.avg_day_orders)  # the fastest courier
+    courier = min(list_couriers, key=lambda x: x.avg_order_complete_time)  # the most productive courier
+
+    order_id = uuid.uuid4()
+    db_order = models.Order(id=order_id, name=order.name, district_id=district.id, courier_id=courier.id,
+                            status=Status.IN_PROGRESS)
+    db.add(db_order)
+    db.commit()
+
+    order_created = schemas.OrderCreated(order_id=order_id, courier_id=courier.id)
+
+    return order_created

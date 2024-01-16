@@ -35,7 +35,7 @@ class Order(Base):
     district_id = Column(UUID, ForeignKey("districts.id"))
     courier_id = Column(UUID, ForeignKey("couriers.id"))
     status = Column(Integer)
-    date_publication = Column(DateTime, default=now)
+    date_publication = Column(DateTime, default=now())
     date_completion = Column(DateTime, default=None)
 
     district = relationship("District", back_populates="orders")

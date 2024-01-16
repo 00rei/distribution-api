@@ -1,7 +1,7 @@
 import uuid
 from datetime import timedelta, datetime
 
-from pydantic import BaseModel, UUID4
+from pydantic import BaseModel, UUID4, Field
 
 
 class DistrictBase(BaseModel):
@@ -17,12 +17,17 @@ class OrderBase(BaseModel):
 
 
 class OrderIn(OrderBase):
-    district: DistrictBase
+    district: str
 
 
 class OrderOut(BaseModel):
     order_id: uuid.UUID
     order_name: str
+
+
+class OrderCreated(BaseModel):
+    order_id: uuid.UUID
+    courier_id: uuid.UUID
 
 
 # class Order(OrderBase):
