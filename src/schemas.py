@@ -12,35 +12,42 @@ class District(DistrictBase):
     id: UUID4
 
 
+class OrderBase(BaseModel):
+    name: str
+
+
+class OrderIn(OrderBase):
+    district: DistrictBase
+
+
+class OrderOut(BaseModel):
+    order_id: uuid.UUID
+    order_name: str
+
+
+# class Order(OrderBase):
+#     id: UUID4
+#     status: int
+#     courier: Courier
+#     date_publication: datetime
+#     date_completion: datetime | None
+
+
+# class CourierBase(BaseModel):
+#     id: UUID4
+#     name: str
+
 class CourierBase(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
+class CourierIn(BaseModel):
     name: str
     districts: list[str] = set()
 
 
-class CourierOut(BaseModel):
-    id: UUID4
-    name: str
-
-
 class Courier(CourierBase):
-    id: UUID4
+    active_order: OrderOut | None = None
     avg_order_complete_time: timedelta | None
     avg_day_orders: int | None
-
-
-class OrderBase(BaseModel):
-    name: str
-    district: District
-
-
-class OrderCreated(BaseModel):
-    id: UUID4
-    courier: Courier
-
-
-class Order(OrderBase):
-    id: UUID4
-    status: int
-    courier: Courier
-    date_publication: datetime
-    date_completion: datetime | None

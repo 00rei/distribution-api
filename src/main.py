@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -18,7 +18,7 @@ def get_db():
 
 
 @app.post("/courier")
-def create_courier(courier: schemas.CourierBase, db: Session = Depends(get_db)):
+def create_courier(courier: schemas.CourierIn, db: Session = Depends(get_db)):
     districts = list(set(d.lower() for d in courier.districts))
     db_courier = courier
     db_courier.districts = districts
@@ -26,6 +26,19 @@ def create_courier(courier: schemas.CourierBase, db: Session = Depends(get_db)):
     return {"message": f"Курьер '{db_courier.name}' зарегистрирован в системе"}
 
 
-@app.get("/courier", response_model=list[schemas.CourierOut])
+@app.get("/courier", response_model=list[schemas.CourierBase])
 def get_couriers(db: Session = Depends(get_db)):
     return crud.get_couriers(db)
+
+
+@app.get("/courier/{id}", response_model=schemas.Courier)
+def get_courier(id: str, db: Session = Depends(get_db)):
+    db_courier = crud.get_courier(id, db)
+    if db_courier is not None:
+        return db_courier
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Courier does not exist')
+
+
+# @app.post("/order")
+# def create_order(order: schemas.OrderIn, db: Session = Depends(get_db)):
+#     return crud.create_order(db, order)

@@ -1,9 +1,16 @@
 import uuid
+from enum import IntEnum
 from typing import List
 
+from fastapi import HTTPException, status
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
-
 from . import models, schemas
+
+
+class Status(IntEnum):
+    IN_PROGRESS = 1
+    COMPLETED = 2
 
 
 def get_district(db: Session, district_param: str) -> schemas.District | None:
@@ -27,7 +34,7 @@ def create_or_get_district(db: Session, district_name: schemas.DistrictBase):
     return db_district
 
 
-def create_courier(db: Session, courier: schemas.CourierBase):
+def create_courier(db: Session, courier: schemas.CourierIn):
     id_courier = uuid.uuid4()
     db_courier = models.Courier(id=id_courier, name=courier.name)
     db.add(db_courier)
@@ -45,5 +52,37 @@ def create_courier(db: Session, courier: schemas.CourierBase):
     return db_courier
 
 
+def get_active_order_by_courier(db: Session, courier: schemas.Courier):
+    print(courier.id)
+    db_order = db.query(models.Order).filter(models.Order.status == Status.IN_PROGRESS,
+                                             models.Order.courier_id == courier.id).first()
+    return db_order
+
+
 def get_couriers(db: Session):
     return db.query(models.Courier).all()
+
+
+def get_courier(id: str, db: Session):
+    try:
+        db_courier = db.query(models.Courier).filter(models.Courier.id == id).first()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Courier does not exist')
+
+    schema_order = None
+    db_active_order = get_active_order_by_courier(db, db_courier)
+
+    if db_active_order is not None:
+        schema_order = schemas.OrderOut(order_id=db_active_order.id, order_name=db_active_order.name)
+
+    courier = schemas.Courier(id=db_courier.id,
+                              name=db_courier.name,
+                              avg_order_complete_time=db_courier.avg_order_complete_time,
+                              avg_day_orders=db_courier.avg_day_orders,
+                              active_order=schema_order)
+    return courier
+
+
+# def create_order(db: Session, order: schemas.OrderIn):
+#     district = get_district(db, order.district)
+#     courier = db.query(models.Courier).filter(models.Courier.courier_districts)
