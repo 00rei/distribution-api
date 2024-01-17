@@ -1,5 +1,9 @@
+import datetime
 import uuid
 from enum import IntEnum
+from functools import reduce
+from math import floor
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from . import models, schemas
@@ -49,8 +53,11 @@ def create_courier(db: Session, courier: schemas.CourierIn):
 
 
 def get_active_order_by_courier(db: Session, courier: schemas.Courier):
-    db_order = db.query(models.Order).filter(models.Order.status == Status.IN_PROGRESS,
-                                             models.Order.courier_id == courier.id).first()
+    try:
+        db_order = db.query(models.Order).filter(models.Order.status == Status.IN_PROGRESS,
+                                                 models.Order.courier_id == courier.id).first()
+    except Exception:
+        db_order = None
     return db_order
 
 
@@ -58,11 +65,14 @@ def get_couriers(db: Session):
     return db.query(models.Courier).all()
 
 
-def get_courier(id: str, db: Session):
+def get_courier(db: Session, id: str):
     try:
         db_courier = db.query(models.Courier).filter(models.Courier.id == id).first()
     except Exception:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Courier does not exist')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='`id` parameter must be of the `uuid` format')
+
+    if not db_courier:
+        return None
 
     schema_order = None
     db_active_order = get_active_order_by_courier(db, db_courier)
@@ -105,3 +115,58 @@ def create_order(db: Session, order: schemas.OrderIn) -> schemas.OrderCreated:
     order_created = schemas.OrderCreated(order_id=order_id, courier_id=courier.id)
 
     return order_created
+
+
+def get_order(db: Session, order_id: uuid.UUID):
+    try:
+        db_order = db.query(models.Order).filter(models.Order.id == order_id).first()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='`id` parameter must be of the `uuid` format')
+
+    if not db_order:
+        return None
+
+    return db_order
+
+
+def complete_order(db: Session, order_id: uuid.UUID):
+    db_order = get_order(db, order_id)
+    if db_order is None:
+        return None
+
+    if db_order.status == Status.COMPLETED:
+        return None
+
+    db_order.status = Status.COMPLETED
+    db_order.date_completion = datetime.datetime.now()
+    db.commit()
+
+    db_courier = db.query(models.Courier).filter(models.Courier.id == db_order.courier_id).first()
+    orders_completed = db_courier.orders
+
+    list_completed_orders: list[models.Order] = []
+    avg_order_complete_time = 0
+    count_orders = {}
+
+    for order in orders_completed:
+        if order.status == Status.COMPLETED:
+            list_completed_orders.append(order)
+            time = order.date_completion - order.date_publication
+            avg_order_complete_time += time.seconds
+
+    for order in list_completed_orders:
+        order_publication_date = order.date_publication.date()
+        if order_publication_date in count_orders:
+            count_orders[order_publication_date] += 1
+        else:
+            count_orders[order_publication_date] = 1
+
+    avg_order_complete_time = avg_order_complete_time / len(list_completed_orders)
+    avg_day_orders = floor(sum(count_orders.values()) / len(count_orders))
+
+    db_courier.avg_order_complete_time = avg_order_complete_time
+    db_courier.avg_day_orders = avg_day_orders
+
+    db.commit()
+
+    return True

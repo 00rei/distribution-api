@@ -32,8 +32,8 @@ def get_couriers(db: Session = Depends(get_db)):
 
 
 @app.get("/courier/{id}", response_model=schemas.Courier)
-def get_courier(id: str, db: Session = Depends(get_db)):
-    db_courier = crud.get_courier(id, db)
+def get_courier(id: uuid.UUID, db: Session = Depends(get_db)):
+    db_courier = crud.get_courier(db, id)
     if db_courier is not None:
         return db_courier
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Courier does not exist')
@@ -43,3 +43,22 @@ def get_courier(id: str, db: Session = Depends(get_db)):
 def create_order(order: schemas.OrderIn, db: Session = Depends(get_db)):
     order = crud.create_order(db, order)
     return order
+
+
+@app.get("/order/{id}", response_model=schemas.OrderInfo)
+def get_order(id: uuid.UUID, db: Session = Depends(get_db)):
+    order = crud.get_order(db, id)
+    if order is not None:
+        return order
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Order does not exist')
+
+
+@app.post("/order/{id}")
+def complete_order(id: uuid.UUID, db: Session = Depends(get_db)):
+    result = crud.complete_order(db, id)
+    if result:
+        return {"message": "OK"}
+
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail='The order does not exist or has already been completed')

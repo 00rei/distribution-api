@@ -16,6 +16,11 @@ class OrderBase(BaseModel):
     name: str
 
 
+class OrderInfo(BaseModel):
+    courier_id: uuid.UUID
+    status: int
+
+
 class OrderIn(OrderBase):
     district: str
 
