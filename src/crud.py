@@ -1,7 +1,6 @@
 import datetime
 import uuid
 from enum import IntEnum
-from functools import reduce
 from math import floor
 
 from fastapi import HTTPException, status
@@ -103,8 +102,8 @@ def create_order(db: Session, order: schemas.OrderIn) -> schemas.OrderCreated:
     if not list_couriers:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='No suitable courier found')
 
-    # courier = min(list_couriers, key=lambda x: x.avg_day_orders)  # the fastest courier
-    courier = min(list_couriers, key=lambda x: x.avg_order_complete_time)  # the most productive courier
+    # courier = min(list_couriers, key=lambda x: x.avg_day_orders)  # выбираем курьера, который выполняет больше заказов за день
+    courier = min(list_couriers, key=lambda x: x.avg_order_complete_time)  # выбираем курьера, который выполняет заказы быстрее
 
     order_id = uuid.uuid4()
     db_order = models.Order(id=order_id, name=order.name, district_id=district.id, courier_id=courier.id,
