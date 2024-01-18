@@ -35,18 +35,6 @@ class OrderCreated(BaseModel):
     courier_id: uuid.UUID
 
 
-# class Order(OrderBase):
-#     id: UUID4
-#     status: int
-#     courier: Courier
-#     date_publication: datetime
-#     date_completion: datetime | None
-
-
-# class CourierBase(BaseModel):
-#     id: UUID4
-#     name: str
-
 class CourierBase(BaseModel):
     id: uuid.UUID
     name: str

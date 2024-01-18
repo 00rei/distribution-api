@@ -141,13 +141,13 @@ def complete_order(db: Session, order_id: uuid.UUID):
     db.commit()
 
     db_courier = db.query(models.Courier).filter(models.Courier.id == db_order.courier_id).first()
-    orders_completed = db_courier.orders
+    courier_orders = db_courier.orders
 
     list_completed_orders: list[models.Order] = []
     avg_order_complete_time = 0
     count_orders = {}
 
-    for order in orders_completed:
+    for order in courier_orders:
         if order.status == Status.COMPLETED:
             list_completed_orders.append(order)
             time = order.date_completion - order.date_publication
