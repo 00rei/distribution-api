@@ -4,14 +4,19 @@ services:
     image: postgres:16
     container_name: db_app
     env_file:
-      - .env-docker
+      - .env-db
 
+  db_test:
+    image: postgres:16
+    container_name: db_app_test
+    env_file:
+      - .env-db-test
 
   app:
     build:
       context: .
     env_file:
-      - .env-docker
+      - .env-app
     container_name: app
     command: ["docker/app.sh"]
     restart: always
