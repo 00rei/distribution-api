@@ -10,4 +10,6 @@ COPY . .
 
 CMD alembic upgrade head
 
+RUN chmod +x docker/app.sh
+
 #CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
